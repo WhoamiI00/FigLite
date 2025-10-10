@@ -11,20 +11,42 @@ export default function HomePage() {
   const [loading, setLoading] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
 
-  const handleCreateRoom = () => {
+  const handleCreateRoom = async () => {
     setLoading(true);
 
     try {
-      // Generate a simple room code - Liveblocks will handle the rest
-      const roomCode = generateRoomCode();
+      // Use the protected API endpoint for room creation
+      const response = await fetch("/api/rooms", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
 
-      console.log("Created room code:", roomCode);
+      const data = await response.json();
+
+      if (!response.ok) {
+        // Handle Arcjet protection errors gracefully
+        if (response.status === 429) {
+          alert(`Rate limit exceeded: ${data.message}`);
+        } else if (response.status === 403) {
+          alert(`Access denied: ${data.message}`);
+        } else {
+          alert(data.message || "Failed to create room. Please try again.");
+        }
+        setLoading(false);
+        return;
+      }
+
+      console.log("Created room code:", data.roomCode);
 
       // Navigate to the room - Liveblocks will create it automatically
-      router.push(`/room/${roomCode}`);
+      router.push(`/room/${data.roomCode}`);
     } catch (error) {
       console.error("Failed to create room:", error);
-      alert("Failed to create room. Please try again.");
+      alert(
+        "Failed to create room. Please check your connection and try again."
+      );
       setLoading(false);
     }
   };
@@ -37,10 +59,10 @@ export default function HomePage() {
     <div className='flex h-screen items-center justify-center bg-primary-grey-200'>
       <div className='space-y-8 p-8 text-center'>
         <div className='space-y-4'>
-          <h1 className='text-4xl font-bold text-white'>Welcome to Figlite</h1>
+          <h1 className='text-4xl font-bold text-white'>Welcome to NeoLive</h1>
           <p className='text-lg text-primary-grey-300'>
-            Collaborative design made simple. Create or join a room to get
-            started.
+            Real-time collaborative design made simple. Create or join a room to
+            get started.
           </p>
         </div>
 
@@ -64,8 +86,9 @@ export default function HomePage() {
 
         <div className='space-y-1 text-sm text-primary-grey-300'>
           <p>• No account required</p>
-          <p>• Rooms expire after 24 hours</p>
-          <p>• Real-time collaboration</p>
+          <p>• Rooms auto-delete after 10 minutes when empty</p>
+          <p>• Sustain rooms for 24 hours to preserve content</p>
+          <p>• Real-time collaboration across networks</p>
         </div>
       </div>
 

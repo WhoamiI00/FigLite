@@ -1,5 +1,5 @@
 {
-  "name": "tigma",
+  "name": "neolive",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@arcjet/next": "^1.0.0-beta.13",
     "@liveblocks/client": "^1.9.7",
     "@liveblocks/react": "^1.9.7",
     "@liveblocks/react-comments": "^1.9.7",

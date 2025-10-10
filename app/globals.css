@@ -5,9 +5,51 @@
 @import "@liveblocks/react-comments/styles.css";
 
 * {
-  font-family:
-    work sans,
-    sans-serif;
+  font-family: var(--font-work-sans), sans-serif;
+}
+
+/* Font family utilities */
+.font-inter {
+  font-family: var(--font-inter), sans-serif;
+}
+.font-roboto {
+  font-family: var(--font-roboto), sans-serif;
+}
+.font-open-sans {
+  font-family: var(--font-open-sans), sans-serif;
+}
+.font-lato {
+  font-family: var(--font-lato), sans-serif;
+}
+.font-montserrat {
+  font-family: var(--font-montserrat), sans-serif;
+}
+.font-poppins {
+  font-family: var(--font-poppins), sans-serif;
+}
+.font-playfair {
+  font-family: var(--font-playfair-display), serif;
+}
+.font-merriweather {
+  font-family: var(--font-merriweather), serif;
+}
+.font-lora {
+  font-family: var(--font-lora), serif;
+}
+.font-fira-code {
+  font-family: var(--font-fira-code), monospace;
+}
+.font-source-code {
+  font-family: var(--font-source-code-pro), monospace;
+}
+.font-jetbrains {
+  font-family: var(--font-jetbrains-mono), monospace;
+}
+.font-pacifico {
+  font-family: var(--font-pacifico), cursive;
+}
+.font-dancing {
+  font-family: var(--font-dancing-script), cursive;
 }
 
 @layer utilities {
@@ -25,5 +67,54 @@
 
   .right-menu-item {
     @apply flex justify-between px-3 py-2 hover:bg-primary-grey-200 !important;
+  }
+
+  /* Custom Scrollbar Styles */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: #2e2f36;
+    border-radius: 3px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #5d5e65;
+    border-radius: 3px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #00d2ff;
+  }
+
+  /* For Firefox */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #5d5e65 #2e2f36;
+  }
+
+  /* Typing Animation */
+  .typing-dot-1 {
+    animation: typing-bounce 1.5s infinite;
+  }
+
+  .typing-dot-2 {
+    animation: typing-bounce 1.5s infinite 0.1s;
+  }
+
+  .typing-dot-3 {
+    animation: typing-bounce 1.5s infinite 0.2s;
+  }
+
+  @keyframes typing-bounce {
+    0%,
+    60%,
+    100% {
+      transform: translateY(0);
+    }
+    30% {
+      transform: translateY(-0.25rem);
+    }
   }
 }

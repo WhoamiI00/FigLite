@@ -5,6 +5,7 @@ import { ClientSideSuspense } from "@liveblocks/react";
 import { useEffect } from "react";
 
 import Loader from "@/components/Loader";
+import ParticipantTracker from "@/components/ParticipantTracker";
 import { RoomProvider } from "@/liveblocks.config";
 import { RoomStorageManager } from "@/lib/room-storage";
 import { RoomKeepaliveService } from "@/lib/room-keepalive";
@@ -42,7 +43,13 @@ const DynamicRoom = ({ roomId, roomCode, children }: DynamicRoomProps) => {
        *
        * initialPresence: https://liveblocks.io/docs/api-reference/liveblocks-react#RoomProvider
        */
-      initialPresence={{ cursor: null, cursorColor: null, editingText: null }}
+      initialPresence={{
+        cursor: null,
+        message: "",
+        userName: "",
+        userId: "",
+        isTyping: false,
+      }}
       /**
        * initialStorage is used to initialize the storage of the room.
        *
@@ -50,15 +57,28 @@ const DynamicRoom = ({ roomId, roomCode, children }: DynamicRoomProps) => {
        */
       initialStorage={{
         /**
-         * We're using a LiveMap to store the canvas objects
+         * We're using a LiveMap to store the canvas objects and chat messages
          *
          * LiveMap: https://liveblocks.io/docs/api-reference/liveblocks-client#LiveMap
          */
         canvasObjects: new LiveMap(),
+        chatMessages: new LiveMap(),
+        roomSettings: {
+          isSustained: false,
+          sustainedUntil: null,
+          sustainedBy: null,
+          createdAt: new Date().toISOString(),
+          lastSustainedAt: null,
+        },
       }}
     >
       <ClientSideSuspense fallback={<Loader />}>
-        {() => children}
+        {() => (
+          <>
+            <ParticipantTracker roomCode={roomCode} />
+            {children}
+          </>
+        )}
       </ClientSideSuspense>
     </RoomProvider>
   );

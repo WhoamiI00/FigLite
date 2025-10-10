@@ -20,7 +20,7 @@ import {
 } from "@/lib/canvas";
 import { handleDelete, handleKeyDown } from "@/lib/key-events";
 import { LeftSidebar, Live, Navbar, RightSidebar } from "@/components/index";
-import RoomInfo from "@/components/RoomInfo";
+
 // Import services to initialize them
 import "@/lib/room-cleanup";
 import "@/lib/room-keepalive";
@@ -498,7 +498,7 @@ const Home = ({ roomId, roomCode }: HomeProps) => {
   }, [canvasObjects]);
 
   return (
-    <main className='h-screen overflow-hidden'>
+    <main className='flex h-screen flex-col overflow-hidden'>
       <Navbar
         imageInputRef={imageInputRef}
         activeElement={activeElement}
@@ -516,12 +516,12 @@ const Home = ({ roomId, roomCode }: HomeProps) => {
         handleActiveElement={handleActiveElement}
       />
 
-      <RoomInfo roomCode={roomCode} />
-
-      <section className='flex h-full flex-row'>
+      <section className='flex min-h-0 flex-1 flex-row'>
         <LeftSidebar allShapes={Array.from(canvasObjects)} />
 
-        <Live canvasRef={canvasRef} undo={undo} redo={redo} />
+        <div className='custom-scrollbar flex-1 overflow-hidden'>
+          <Live canvasRef={canvasRef} undo={undo} redo={redo} />
+        </div>
 
         <RightSidebar
           elementAttributes={elementAttributes}
@@ -530,6 +530,7 @@ const Home = ({ roomId, roomCode }: HomeProps) => {
           isEditingRef={isEditingRef}
           activeObjectRef={activeObjectRef}
           syncShapeInStorage={syncShapeInStorage}
+          roomCode={roomCode}
         />
       </section>
     </main>

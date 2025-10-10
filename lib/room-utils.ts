@@ -21,7 +21,7 @@ export function generateRoomCode(): string {
  * Generates a unique room ID for Liveblocks
  */
 export function generateRoomId(code: string): string {
-  return `figlite-${code.toLowerCase()}`;
+  return `neolive-${code.toLowerCase()}`;
 }
 
 /**
@@ -77,28 +77,44 @@ export function isRoomExpired(room: Room): boolean {
  */
 export function shouldCleanupRoom(room: Room): boolean {
   const now = new Date();
-  const inactiveThreshold = 2 * 60 * 60 * 1000; // 2 hours in ms
 
-  // Don't cleanup sustained rooms
+  // Don't cleanup sustained rooms that are still within their sustained period
   if (room.isSustained && room.sustainedUntil && now < room.sustainedUntil) {
     return false;
   }
 
-  // First check if the room is actually expired
+  // First check if the room is actually expired (24 hours)
   if (isRoomExpired(room)) {
     return true;
   }
 
-  // Only check inactivity for rooms older than 5 minutes (to prevent cleanup of newly created rooms)
-  const roomAge = now.getTime() - room.createdAt.getTime();
-  const minRoomAge = 5 * 60 * 1000; // 5 minutes
+  // For non-sustained rooms, check if empty for 10 minutes
+  if (!room.isSustained) {
+    // If no participants and inactive for 10 minutes, cleanup
+    if (room.participantCount === 0) {
+      const emptyRoomThreshold = 10 * 60 * 1000; // 10 minutes in ms
+      const inactiveTime = now.getTime() - room.lastActivity.getTime();
 
-  if (roomAge < minRoomAge) {
-    return false; // Don't cleanup very new rooms
+      // Only apply 10-minute rule if room is older than 2 minutes (grace period for new rooms)
+      const roomAge = now.getTime() - room.createdAt.getTime();
+      const graceTime = 2 * 60 * 1000; // 2 minutes
+
+      if (roomAge > graceTime && inactiveTime > emptyRoomThreshold) {
+        return true;
+      }
+    }
   }
 
-  // Check if inactive for too long
-  return now.getTime() - room.lastActivity.getTime() > inactiveThreshold;
+  // For sustained rooms that have expired their sustained period,
+  // use longer inactivity threshold (2 hours)
+  if (room.isSustained && room.sustainedUntil && now > room.sustainedUntil) {
+    const extendedInactiveThreshold = 2 * 60 * 60 * 1000; // 2 hours in ms
+    return (
+      now.getTime() - room.lastActivity.getTime() > extendedInactiveThreshold
+    );
+  }
+
+  return false;
 }
 
 /**
@@ -147,6 +163,62 @@ export function formatRoomExpiry(room: Room): string {
   } else {
     return `${diffMinutes}m remaining`;
   }
+}
+
+/**
+ * Checks if an empty room should be deleted (10-minute rule for non-sustained rooms)
+ */
+export function shouldCleanupEmptyRoom(room: Room): boolean {
+  // Only applies to non-sustained rooms
+  if (room.isSustained) {
+    return false;
+  }
+
+  // Must have no participants
+  if (room.participantCount > 0) {
+    return false;
+  }
+
+  const now = new Date();
+  const emptyDuration = now.getTime() - room.lastActivity.getTime();
+  const roomAge = now.getTime() - room.createdAt.getTime();
+
+  // Grace period: Don't cleanup very new rooms (2 minutes)
+  const graceTime = 2 * 60 * 1000;
+  if (roomAge < graceTime) {
+    return false;
+  }
+
+  // Cleanup threshold: 10 minutes without participants
+  const cleanupThreshold = 10 * 60 * 1000;
+  return emptyDuration > cleanupThreshold;
+}
+
+/**
+ * Gets the cleanup reason for a room (for logging)
+ */
+export function getCleanupReason(room: Room): string {
+  const now = new Date();
+
+  if (isRoomExpired(room)) {
+    return room.isSustained
+      ? "Sustained period expired (24h)"
+      : "Room expired (24h)";
+  }
+
+  if (shouldCleanupEmptyRoom(room)) {
+    return "Empty room (10min timeout)";
+  }
+
+  if (room.isSustained && room.sustainedUntil && now > room.sustainedUntil) {
+    const inactiveTime = now.getTime() - room.lastActivity.getTime();
+    const threshold = 2 * 60 * 60 * 1000; // 2 hours
+    if (inactiveTime > threshold) {
+      return "Sustained room inactive (2h)";
+    }
+  }
+
+  return "Unknown";
 }
 
 /**

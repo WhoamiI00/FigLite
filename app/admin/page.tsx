@@ -46,7 +46,7 @@ export default function AdminPanel() {
   const handleCleanupRoom = (roomCode: string) => {
     if (confirm(`Are you sure you want to delete room ${roomCode}?`)) {
       RoomStorageManager.deleteRoom(roomCode);
-      const roomId = `figlite-${roomCode.toLowerCase()}`;
+      const roomId = `neolive-${roomCode.toLowerCase()}`;
       RoomKeepaliveService.stopKeepalive(roomId);
       refreshData();
     }
@@ -61,7 +61,7 @@ export default function AdminPanel() {
     <div className='min-h-screen bg-primary-grey-200 p-8'>
       <div className='mx-auto max-w-6xl'>
         <h1 className='mb-8 text-3xl font-bold text-white'>
-          Figlite Room Admin
+          NeoLive Room Admin
         </h1>
 
         {/* Stats Cards */}

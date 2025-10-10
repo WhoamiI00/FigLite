@@ -1,8 +1,8 @@
 import { Room } from "@/types/room";
 import { shouldCleanupRoom } from "./room-utils";
 
-const ROOMS_STORAGE_KEY = "figlite_rooms";
-const USER_ROOMS_KEY = "figlite_user_rooms";
+const ROOMS_STORAGE_KEY = "neolive_rooms";
+const USER_ROOMS_KEY = "neolive_user_rooms";
 
 /**
  * Room storage manager using localStorage
@@ -130,20 +130,26 @@ export class RoomStorageManager {
   /**
    * Cleans up expired rooms
    */
-  static cleanupExpiredRooms(): string[] {
+  static cleanupExpiredRooms(): {
+    deleted: Array<{ code: string; reason: string }>;
+  } {
     const rooms = this.getAllRooms();
-    const deletedRooms: string[] = [];
+    const deletedRooms: Array<{ code: string; reason: string }> = [];
 
     for (const [code, roomData] of Object.entries(rooms)) {
       const room = this.deserializeRoom(roomData);
 
       if (shouldCleanupRoom(room)) {
+        // Import the helper function at the top level to avoid circular imports
+        const { getCleanupReason } = require("./room-utils");
+        const reason = getCleanupReason(room);
+
         this.deleteRoom(code);
-        deletedRooms.push(code);
+        deletedRooms.push({ code, reason });
       }
     }
 
-    return deletedRooms;
+    return { deleted: deletedRooms };
   }
 
   /**

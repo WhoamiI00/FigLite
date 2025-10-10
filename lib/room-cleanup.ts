@@ -51,29 +51,41 @@ export class RoomCleanupService {
    */
   static runCleanup(): void {
     try {
-      const deletedRooms = RoomStorageManager.cleanupExpiredRooms();
+      const cleanupResult = RoomStorageManager.cleanupExpiredRooms();
 
       // Stop keepalive services for deleted rooms
-      deletedRooms.forEach((roomCode) => {
-        const roomId = `figlite-${roomCode.toLowerCase()}`;
+      cleanupResult.deleted.forEach((roomInfo) => {
+        const roomId = `neolive-${roomInfo.code.toLowerCase()}`;
         RoomKeepaliveService.stopKeepalive(roomId);
       });
 
-      if (deletedRooms.length > 0) {
-        console.log(
-          `Cleaned up ${deletedRooms.length} expired rooms:`,
-          deletedRooms
-        );
+      if (cleanupResult.deleted.length > 0) {
+        console.log("🧹 Room cleanup completed:");
+        cleanupResult.deleted.forEach((roomInfo) => {
+          console.log(`  - ${roomInfo.code}: ${roomInfo.reason}`);
+        });
       }
 
       // Log sustained rooms status
       const activeRooms = RoomStorageManager.getActiveRooms();
       const sustainedRooms = activeRooms.filter((room) => room.isSustained);
+      const emptyRooms = activeRooms.filter(
+        (room) => room.participantCount === 0
+      );
+
+      console.log(`📊 Room status: ${activeRooms.length} active rooms`);
       if (sustainedRooms.length > 0) {
-        console.log(
-          `${sustainedRooms.length} sustained rooms are being preserved:`,
-          sustainedRooms.map((room) => room.code)
+        console.log(`  - ${sustainedRooms.length} sustained rooms preserved`);
+      }
+      if (emptyRooms.length > 0) {
+        const nonSustainedEmpty = emptyRooms.filter(
+          (room) => !room.isSustained
         );
+        if (nonSustainedEmpty.length > 0) {
+          console.log(
+            `  - ${nonSustainedEmpty.length} empty rooms (will cleanup after 10min)`
+          );
+        }
       }
     } catch (error) {
       console.error("Error during room cleanup:", error);
@@ -91,7 +103,8 @@ export class RoomCleanupService {
 // Auto-start cleanup service in browser environment
 if (typeof window !== "undefined") {
   // Start cleanup service when module loads
-  RoomCleanupService.start(10); // Run every 10 minutes
+  // Run every 5 minutes to catch empty rooms more quickly
+  RoomCleanupService.start(5);
 
   // Stop cleanup service when page unloads
   window.addEventListener("beforeunload", () => {
