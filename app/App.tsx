@@ -20,11 +20,20 @@ import {
 } from "@/lib/canvas";
 import { handleDelete, handleKeyDown } from "@/lib/key-events";
 import { LeftSidebar, Live, Navbar, RightSidebar } from "@/components/index";
+import RoomInfo from "@/components/RoomInfo";
+// Import services to initialize them
+import "@/lib/room-cleanup";
+import "@/lib/room-keepalive";
 import { handleImageUpload } from "@/lib/shapes";
 import { defaultNavElement } from "@/constants";
 import { ActiveElement, Attributes } from "@/types/type";
 
-const Home = () => {
+interface HomeProps {
+  roomId: string;
+  roomCode: string;
+}
+
+const Home = ({ roomId, roomCode }: HomeProps) => {
   /**
    * useUndo and useRedo are hooks provided by Liveblocks that allow you to
    * undo and redo mutations.
@@ -506,6 +515,8 @@ const Home = () => {
         }}
         handleActiveElement={handleActiveElement}
       />
+
+      <RoomInfo roomCode={roomCode} />
 
       <section className='flex h-full flex-row'>
         <LeftSidebar allShapes={Array.from(canvasObjects)} />
