@@ -4,14 +4,8 @@ import { shouldCleanupRoom } from "./room-utils";
 const ROOMS_STORAGE_KEY = "neolive_rooms";
 const USER_ROOMS_KEY = "neolive_user_rooms";
 
-/**
- * Room storage manager using localStorage
- * Note: In production, replace with a proper database
- */
 export class RoomStorageManager {
-  /**
-   * Saves a room to storage
-   */
+
   static saveRoom(room: Room): void {
     const rooms = this.getAllRooms();
     const serializedRoom = {
