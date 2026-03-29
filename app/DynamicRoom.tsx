@@ -73,12 +73,8 @@ const DynamicRoom = ({ roomId, roomCode, children }: DynamicRoomProps) => {
       }}
     >
       <ClientSideSuspense fallback={<Loader />}>
-        {() => (
-          <>
-            <ParticipantTracker roomCode={roomCode} />
-            {children}
-          </>
-        )}
+        <ParticipantTracker roomCode={roomCode} />
+        {children}
       </ClientSideSuspense>
     </RoomProvider>
   );

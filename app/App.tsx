@@ -81,7 +81,7 @@ const Home = ({ roomId, roomCode }: HomeProps) => {
    * We use this to determine if the user is drawing or not
    * i.e., if the freeform drawing mode is on or not.
    */
-  const isDrawing = useRef(false);
+  const isDrawing = useRef<boolean>(false);
 
   /**
    * shapeRef is a reference to the shape that the user is currently drawing.
@@ -115,7 +115,7 @@ const Home = ({ roomId, roomCode }: HomeProps) => {
    * canvas re-renders.
    */
   const activeObjectRef = useRef<fabric.Object | null>(null);
-  const isEditingRef = useRef(false);
+  const isEditingRef = useRef<boolean>(false);
 
   /**
    * imageInputRef is a reference to the input element that we use to upload
@@ -128,7 +128,7 @@ const Home = ({ roomId, roomCode }: HomeProps) => {
   const imageInputRef = useRef<HTMLInputElement>(null);
 
   // Panning refs
-  const isPanning = useRef(false);
+  const isPanning = useRef<boolean>(false);
   const lastPanPos = useRef<{ x: number; y: number } | null>(null);
 
   // Shortcuts modal state
