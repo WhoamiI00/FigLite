@@ -2,6 +2,8 @@ import arcjet, { detectBot, fixedWindow, shield } from "@arcjet/next";
 import { NextRequest, NextResponse } from "next/server";
 import { generateRoomCode } from "@/lib/room-utils";
 
+export const runtime = "edge";
+
 // Strict Arcjet configuration for room creation
 const aj = arcjet({
   key: process.env.ARCJET_KEY!,

@@ -1,6 +1,8 @@
 import arcjet, { detectBot, fixedWindow, shield } from "@arcjet/next";
 import { NextRequest, NextResponse } from "next/server";
 
+export const runtime = "edge";
+
 // Moderate Arcjet configuration for room validation
 const aj = arcjet({
   key: process.env.ARCJET_KEY!,
