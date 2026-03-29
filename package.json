@@ -9,8 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@arcjet/next": "^1.0.0-beta.13",
-    "@liveblocks/client": "^1.9.7",
+"@liveblocks/client": "^1.9.7",
     "@liveblocks/react": "^1.9.7",
     "@liveblocks/react-comments": "^1.9.7",
     "@radix-ui/react-collapsible": "^1.0.3",
