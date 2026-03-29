@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,16 +28,7 @@ export default function JoinRoomModal({ onClose }: JoinRoomModalProps) {
       const data = await response.json();
 
       if (!response.ok) {
-        // Handle Arcjet protection errors gracefully
-        if (response.status === 429) {
-          alert(`Rate limit exceeded: ${data.message}`);
-        } else if (response.status === 403) {
-          alert(`Access denied: ${data.message}`);
-        } else if (response.status === 400) {
-          alert(data.message || "Invalid room code format.");
-        } else {
-          alert(data.message || "Failed to validate room. Please try again.");
-        }
+        toast.error(data.message || "Failed to validate room. Please try again.");
         setLoading(false);
         return;
       }
@@ -45,7 +37,7 @@ export default function JoinRoomModal({ onClose }: JoinRoomModalProps) {
       router.push(`/room/${code}`);
     } catch (error) {
       console.error("Failed to validate room:", error);
-      alert(
+      toast.error(
         "Failed to validate room. Please check your connection and try again."
       );
       setLoading(false);

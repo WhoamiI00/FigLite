@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { Users, Share2, Zap, Clock } from "lucide-react";
 import { useOthers, useStorage, useMutation } from "@/liveblocks.config";
 import { Button } from "@/components/ui/button";
@@ -52,7 +53,7 @@ export default function RoomInfo({ roomCode }: RoomInfoProps) {
 
     // Show confirmation
     const action = roomSettings.isSustained ? "extended" : "sustained";
-    alert(
+    toast.success(
       `Room ${action} for 24 hours by ${userName}! Canvas data will be preserved even when no one is active.`
     );
   };

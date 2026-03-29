@@ -5,12 +5,12 @@ import Image from "next/image";
 
 import { getShapeInfo } from "@/lib/utils";
 
-const LeftSidebar = ({ allShapes }: { allShapes: Array<any> }) => {
+const LeftSidebar = ({ allShapes, visible }: { allShapes: Array<any>; visible?: boolean }) => {
   // memoize the result of this function so that it doesn't change on every render but only when there are new shapes
   const memoizedShapes = useMemo(
     () => (
-      <section className='sticky left-0 flex h-full min-w-[227px] select-none flex-col border-t border-primary-grey-200 bg-primary-black text-primary-grey-300 max-sm:hidden'>
-        <h3 className='flex-shrink-0 border border-primary-grey-200 px-5 py-4 text-xs uppercase'>
+      <section className={`sticky left-0 flex h-full min-w-[227px] select-none flex-col border-t border-gray-200 bg-white text-gray-600 dark:border-primary-grey-200 dark:bg-primary-black dark:text-primary-grey-300 ${visible ? 'block' : 'hidden md:flex'}`}>
+        <h3 className='flex-shrink-0 border border-gray-200 px-5 py-4 text-xs uppercase dark:border-primary-grey-200'>
           Layers
         </h3>
         <div className='custom-scrollbar flex flex-1 flex-col overflow-y-auto pb-4'>
@@ -38,7 +38,7 @@ const LeftSidebar = ({ allShapes }: { allShapes: Array<any> }) => {
         </div>
       </section>
     ),
-    [allShapes?.length]
+    [allShapes?.length, visible]
   );
 
   return memoizedShapes;

@@ -29,6 +29,7 @@ export const initializeFabric = ({
   const canvas = new fabric.Canvas(canvasRef.current, {
     width: canvasElement?.clientWidth,
     height: canvasElement?.clientHeight,
+    allowTouchScrolling: false,
   });
 
   // set canvas reference to fabricRef so we can use it later anywhere outside canvas listener
@@ -59,11 +60,35 @@ export const handleCanvasMouseDown = ({
   // set canvas drawing mode to false
   canvas.isDrawingMode = false;
 
-  // if selected shape is freeform, set drawing mode to true and return
-  if (selectedShapeRef.current === "freeform") {
+  // if selected shape is a drawing tool, set drawing mode to true and configure brush
+  const drawingTools = ["freeform", "pen", "brush", "highlighter", "eraser"];
+  if (drawingTools.includes(selectedShapeRef.current || "")) {
     isDrawing.current = true;
     canvas.isDrawingMode = true;
-    canvas.freeDrawingBrush.width = 5;
+
+    switch (selectedShapeRef.current) {
+      case "pen":
+        canvas.freeDrawingBrush.width = 2;
+        canvas.freeDrawingBrush.color = "#aabbcc";
+        break;
+      case "brush":
+        canvas.freeDrawingBrush.width = 10;
+        canvas.freeDrawingBrush.color = "#aabbcc";
+        break;
+      case "highlighter":
+        canvas.freeDrawingBrush.width = 20;
+        canvas.freeDrawingBrush.color = "rgba(170,187,204,0.3)";
+        break;
+      case "eraser":
+        canvas.freeDrawingBrush.width = 20;
+        canvas.freeDrawingBrush.color = "#ffffff";
+        break;
+      case "freeform":
+      default:
+        canvas.freeDrawingBrush.width = 5;
+        canvas.freeDrawingBrush.color = "#aabbcc";
+        break;
+    }
     return;
   }
 
@@ -113,7 +138,8 @@ export const handleCanvaseMouseMove = ({
 }: CanvasMouseMove) => {
   // if selected shape is freeform, return
   if (!isDrawing.current) return;
-  if (selectedShapeRef.current === "freeform") return;
+  const drawingTools = ["freeform", "pen", "brush", "highlighter", "eraser"];
+  if (drawingTools.includes(selectedShapeRef.current || "")) return;
 
   canvas.isDrawingMode = false;
 
@@ -155,6 +181,28 @@ export const handleCanvaseMouseMove = ({
         width: pointer.x - (shapeRef.current?.left || 0),
         height: pointer.y - (shapeRef.current?.top || 0),
       });
+      break;
+
+    case "star":
+    case "pentagon":
+    case "hexagon":
+    case "arrow":
+    case "diamond":
+    case "heart":
+    case "cloud":
+    case "bubble": {
+      const scaleX =
+        (pointer.x - (shapeRef.current?.left || 0)) /
+        (shapeRef.current?.width || 1);
+      const scaleY =
+        (pointer.y - (shapeRef.current?.top || 0)) /
+        (shapeRef.current?.height || 1);
+      shapeRef.current?.set({
+        scaleX: Math.abs(scaleX),
+        scaleY: Math.abs(scaleY),
+      });
+      break;
+    }
 
     default:
       break;
@@ -181,7 +229,8 @@ export const handleCanvasMouseUp = ({
   setActiveElement,
 }: CanvasMouseUp) => {
   isDrawing.current = false;
-  if (selectedShapeRef.current === "freeform") return;
+  const drawingTools = ["freeform", "pen", "brush", "highlighter", "eraser"];
+  if (drawingTools.includes(selectedShapeRef.current || "")) return;
 
   // sync shape in storage as drawing is stopped
   syncShapeInStorage(shapeRef.current);
@@ -419,4 +468,110 @@ export const handleCanvasZoom = ({
 
   options.e.preventDefault();
   options.e.stopPropagation();
+};
+
+// handle panning when space is held and mouse is dragged
+export const handleCanvasPanMouseDown = ({
+  options,
+  canvas,
+  isPanning,
+  lastPanPos,
+}: {
+  options: fabric.IEvent;
+  canvas: fabric.Canvas;
+  isPanning: React.MutableRefObject<boolean>;
+  lastPanPos: React.MutableRefObject<{ x: number; y: number } | null>;
+}) => {
+  if (!isPanning.current) return false;
+  canvas.selection = false;
+  canvas.discardActiveObject();
+  const e = options.e as MouseEvent;
+  lastPanPos.current = { x: e.clientX, y: e.clientY };
+  canvas.setCursor("grab");
+  return true;
+};
+
+export const handleCanvasPanMouseMove = ({
+  options,
+  canvas,
+  isPanning,
+  lastPanPos,
+}: {
+  options: fabric.IEvent;
+  canvas: fabric.Canvas;
+  isPanning: React.MutableRefObject<boolean>;
+  lastPanPos: React.MutableRefObject<{ x: number; y: number } | null>;
+}) => {
+  if (!isPanning.current || !lastPanPos.current) return false;
+  const e = options.e as MouseEvent;
+  const deltaX = e.clientX - lastPanPos.current.x;
+  const deltaY = e.clientY - lastPanPos.current.y;
+  canvas.relativePan(new fabric.Point(deltaX, deltaY));
+  lastPanPos.current = { x: e.clientX, y: e.clientY };
+  canvas.setCursor("grab");
+  return true;
+};
+
+export const handleCanvasPanMouseUp = ({
+  canvas,
+  isPanning,
+  lastPanPos,
+}: {
+  canvas: fabric.Canvas;
+  isPanning: React.MutableRefObject<boolean>;
+  lastPanPos: React.MutableRefObject<{ x: number; y: number } | null>;
+}) => {
+  lastPanPos.current = null;
+  if (isPanning.current) {
+    canvas.selection = true;
+    canvas.setCursor("default");
+  }
+};
+
+// fit all objects on canvas to the viewport with 10% padding
+export const handleFitToScreen = (canvas: fabric.Canvas) => {
+  const objects = canvas.getObjects();
+  if (objects.length === 0) return;
+
+  // get bounding box of all objects
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  objects.forEach((obj) => {
+    const bound = obj.getBoundingRect();
+    minX = Math.min(minX, bound.left);
+    minY = Math.min(minY, bound.top);
+    maxX = Math.max(maxX, bound.left + bound.width);
+    maxY = Math.max(maxY, bound.top + bound.height);
+  });
+
+  const objWidth = maxX - minX;
+  const objHeight = maxY - minY;
+  const canvasWidth = canvas.getWidth();
+  const canvasHeight = canvas.getHeight();
+
+  // calculate zoom to fit with 10% padding
+  const padding = 0.1;
+  const zoomX = (canvasWidth * (1 - padding * 2)) / objWidth;
+  const zoomY = (canvasHeight * (1 - padding * 2)) / objHeight;
+  const zoom = Math.min(zoomX, zoomY, 1); // don't zoom in past 100%
+
+  // reset viewport
+  canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
+  canvas.zoomToPoint(
+    new fabric.Point(canvasWidth / 2, canvasHeight / 2),
+    zoom
+  );
+
+  // center objects in viewport
+  const centerX = (minX + maxX) / 2;
+  const centerY = (minY + maxY) / 2;
+  const vpCenterX = canvasWidth / 2;
+  const vpCenterY = canvasHeight / 2;
+  canvas.relativePan(
+    new fabric.Point(
+      vpCenterX - centerX * zoom,
+      vpCenterY - centerY * zoom
+    )
+  );
+
+  canvas.requestRenderAll();
 };

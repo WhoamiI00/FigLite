@@ -3,7 +3,7 @@
 import { fabric } from "fabric";
 import { useEffect, useRef, useState } from "react";
 
-import { useMutation, useRedo, useStorage, useUndo } from "@/liveblocks.config";
+import { useMutation, useRedo, useStorage, useUndo, useUpdateMyPresence } from "@/liveblocks.config";
 import {
   handleCanvaseMouseMove,
   handleCanvasMouseDown,
@@ -17,14 +17,23 @@ import {
   handleResize,
   initializeFabric,
   renderCanvas,
+  handleCanvasPanMouseDown,
+  handleCanvasPanMouseMove,
+  handleCanvasPanMouseUp,
+  handleFitToScreen,
 } from "@/lib/canvas";
 import { handleDelete, handleKeyDown } from "@/lib/key-events";
 import { LeftSidebar, Live, Navbar, RightSidebar } from "@/components/index";
+import ShortcutsModal from "@/components/ShortcutsModal";
+import BrushControls, {
+  TextControls,
+  TransformControls,
+} from "@/components/ToolControls";
 
 // Import services to initialize them
 import "@/lib/room-cleanup";
 import "@/lib/room-keepalive";
-import { handleImageUpload } from "@/lib/shapes";
+import { handleImageUpload, modifyShape } from "@/lib/shapes";
 import { defaultNavElement } from "@/constants";
 import { ActiveElement, Attributes } from "@/types/type";
 
@@ -43,6 +52,7 @@ const Home = ({ roomId, roomCode }: HomeProps) => {
    */
   const undo = useUndo();
   const redo = useRedo();
+  const updateMyPresence = useUpdateMyPresence();
 
   /**
    * useStorage is a hook provided by Liveblocks that allows you to store
@@ -117,6 +127,17 @@ const Home = ({ roomId, roomCode }: HomeProps) => {
    */
   const imageInputRef = useRef<HTMLInputElement>(null);
 
+  // Panning refs
+  const isPanning = useRef(false);
+  const lastPanPos = useRef<{ x: number; y: number } | null>(null);
+
+  // Shortcuts modal state
+  const [showShortcuts, setShowShortcuts] = useState(false);
+
+  // Mobile sidebar toggles
+  const [showLeftSidebar, setShowLeftSidebar] = useState(false);
+  const [showRightSidebar, setShowRightSidebar] = useState(false);
+
   /**
    * activeElement is an object that contains the name, value and icon of the
    * active element in the navbar.
@@ -144,6 +165,16 @@ const Home = ({ roomId, roomCode }: HomeProps) => {
     fill: "#aabbcc",
     stroke: "#aabbcc",
   });
+
+  // Brush controls state
+  const [brushSize, setBrushSize] = useState(5);
+  const [brushOpacity, setBrushOpacity] = useState(1);
+
+  // Text controls state
+  const [textStyles, setTextStyles] = useState<string[]>([]);
+
+  // Transform controls state
+  const [selectedObjects, setSelectedObjects] = useState<fabric.Object[]>([]);
 
   /**
    * deleteShapeFromStorage is a mutation that deletes a shape from the
@@ -231,6 +262,7 @@ const Home = ({ roomId, roomCode }: HomeProps) => {
    */
   const handleActiveElement = (elem: ActiveElement) => {
     setActiveElement(elem);
+    updateMyPresence({ activeTool: elem?.value || "select" });
 
     switch (elem?.value) {
       // delete all the shapes from the canvas
@@ -294,6 +326,13 @@ const Home = ({ roomId, roomCode }: HomeProps) => {
      * Event list: http://fabricjs.com/docs/fabric.Canvas.html#fire
      */
     canvas.on("mouse:down", (options) => {
+      const panned = handleCanvasPanMouseDown({
+        options,
+        canvas,
+        isPanning,
+        lastPanPos,
+      });
+      if (panned) return;
       handleCanvasMouseDown({
         options,
         canvas,
@@ -311,6 +350,13 @@ const Home = ({ roomId, roomCode }: HomeProps) => {
      * Event list: http://fabricjs.com/docs/fabric.Canvas.html#fire
      */
     canvas.on("mouse:move", (options) => {
+      const panned = handleCanvasPanMouseMove({
+        options,
+        canvas,
+        isPanning,
+        lastPanPos,
+      });
+      if (panned) return;
       handleCanvaseMouseMove({
         options,
         canvas,
@@ -329,6 +375,7 @@ const Home = ({ roomId, roomCode }: HomeProps) => {
      * Event list: http://fabricjs.com/docs/fabric.Canvas.html#fire
      */
     canvas.on("mouse:up", () => {
+      handleCanvasPanMouseUp({ canvas, isPanning, lastPanPos });
       handleCanvasMouseUp({
         canvas,
         isDrawing,
@@ -397,6 +444,18 @@ const Home = ({ roomId, roomCode }: HomeProps) => {
         isEditingRef,
         setElementAttributes,
       });
+      // Track selected objects for TransformControls
+      const active = canvas.getActiveObjects();
+      setSelectedObjects(active || []);
+    });
+
+    canvas.on("selection:updated", (options) => {
+      const active = canvas.getActiveObjects();
+      setSelectedObjects(active || []);
+    });
+
+    canvas.on("selection:cleared", () => {
+      setSelectedObjects([]);
     });
 
     /**
@@ -457,6 +516,46 @@ const Home = ({ roomId, roomCode }: HomeProps) => {
       })
     );
 
+    // Panning: Space key held to pan, Ctrl+0 to fit, ? for shortcuts
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.code === "Space" && !isPanning.current) {
+        e.preventDefault();
+        isPanning.current = true;
+        if (fabricRef.current) {
+          fabricRef.current.setCursor("grab");
+          fabricRef.current.selection = false;
+        }
+      }
+      // Ctrl+0 / Cmd+0 for fit to screen
+      if ((e.ctrlKey || e.metaKey) && e.key === "0") {
+        e.preventDefault();
+        if (fabricRef.current) {
+          handleFitToScreen(fabricRef.current);
+        }
+      }
+      // ? key for shortcuts modal
+      if (e.key === "?" && !e.ctrlKey && !e.metaKey) {
+        // Don't trigger if user is typing in an input
+        const target = e.target as HTMLElement;
+        if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable) return;
+        setShowShortcuts((prev) => !prev);
+      }
+    };
+
+    const handleGlobalKeyUp = (e: KeyboardEvent) => {
+      if (e.code === "Space") {
+        isPanning.current = false;
+        lastPanPos.current = null;
+        if (fabricRef.current) {
+          fabricRef.current.setCursor("default");
+          fabricRef.current.selection = true;
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleGlobalKeyDown);
+    window.addEventListener("keyup", handleGlobalKeyUp);
+
     // dispose the canvas and remove the event listeners when the component unmounts
     return () => {
       /**
@@ -485,6 +584,8 @@ const Home = ({ roomId, roomCode }: HomeProps) => {
           deleteShapeFromStorage,
         })
       );
+      window.removeEventListener("keydown", handleGlobalKeyDown);
+      window.removeEventListener("keyup", handleGlobalKeyUp);
     };
   }, [canvasRef]); // run this effect only once when the component mounts and the canvasRef changes
 
@@ -514,12 +615,143 @@ const Home = ({ roomId, roomCode }: HomeProps) => {
           });
         }}
         handleActiveElement={handleActiveElement}
+        onToggleLeftSidebar={() => setShowLeftSidebar((v) => !v)}
+        onToggleRightSidebar={() => setShowRightSidebar((v) => !v)}
+      />
+
+      <BrushControls
+        brushSize={brushSize}
+        onBrushSizeChange={(size: number) => {
+          setBrushSize(size);
+          if (fabricRef.current?.freeDrawingBrush) {
+            fabricRef.current.freeDrawingBrush.width = size;
+          }
+        }}
+        opacity={brushOpacity}
+        onOpacityChange={(opacity: number) => {
+          setBrushOpacity(opacity);
+          if (fabricRef.current?.freeDrawingBrush) {
+            const baseColor =
+              activeElement?.value === "eraser"
+                ? "255,255,255"
+                : "170,187,204";
+            fabricRef.current.freeDrawingBrush.color = `rgba(${baseColor},${opacity})`;
+          }
+        }}
+        activeTool={activeElement?.value || ""}
+      />
+
+      <TextControls
+        fontSize={parseInt(elementAttributes.fontSize) || 36}
+        onFontSizeChange={(size: number) => {
+          modifyShape({
+            canvas: fabricRef.current as fabric.Canvas,
+            property: "fontSize",
+            value: size,
+            activeObjectRef,
+            syncShapeInStorage,
+          });
+          setElementAttributes((prev) => ({
+            ...prev,
+            fontSize: size.toString(),
+          }));
+        }}
+        fontFamily={elementAttributes.fontFamily || "Helvetica"}
+        onFontFamilyChange={(family: string) => {
+          modifyShape({
+            canvas: fabricRef.current as fabric.Canvas,
+            property: "fontFamily",
+            value: family,
+            activeObjectRef,
+            syncShapeInStorage,
+          });
+          setElementAttributes((prev) => ({ ...prev, fontFamily: family }));
+        }}
+        textStyles={textStyles}
+        onTextStyleToggle={(style: string) => {
+          const newStyles = textStyles.includes(style)
+            ? textStyles.filter((s) => s !== style)
+            : [...textStyles, style];
+          setTextStyles(newStyles);
+
+          const canvas = fabricRef.current as fabric.Canvas;
+          if (!canvas) return;
+
+          switch (style) {
+            case "bold":
+              modifyShape({
+                canvas,
+                property: "fontWeight",
+                value: newStyles.includes("bold") ? "bold" : "normal",
+                activeObjectRef,
+                syncShapeInStorage,
+              });
+              break;
+            case "italic":
+              modifyShape({
+                canvas,
+                property: "fontStyle",
+                value: newStyles.includes("italic") ? "italic" : "normal",
+                activeObjectRef,
+                syncShapeInStorage,
+              });
+              break;
+            case "underline":
+              modifyShape({
+                canvas,
+                property: "underline",
+                value: newStyles.includes("underline"),
+                activeObjectRef,
+                syncShapeInStorage,
+              });
+              break;
+            case "strikethrough":
+              modifyShape({
+                canvas,
+                property: "linethrough",
+                value: newStyles.includes("strikethrough"),
+                activeObjectRef,
+                syncShapeInStorage,
+              });
+              break;
+          }
+        }}
+        activeTool={activeElement?.value || ""}
+      />
+
+      <TransformControls
+        selectedObjects={selectedObjects}
+        onTransform={(type: string) => {
+          const canvas = fabricRef.current;
+          if (!canvas) return;
+          const activeObj = canvas.getActiveObject();
+          if (!activeObj) return;
+
+          switch (type) {
+            case "rotate":
+              activeObj.rotate((activeObj.angle || 0) + 45);
+              break;
+            case "flipH":
+              activeObj.set("flipX", !activeObj.flipX);
+              break;
+            case "flipV":
+              activeObj.set("flipY", !activeObj.flipY);
+              break;
+            case "scale":
+              activeObj.scaleX = (activeObj.scaleX || 1) * 1.1;
+              activeObj.scaleY = (activeObj.scaleY || 1) * 1.1;
+              break;
+          }
+          activeObj.setCoords();
+          canvas.requestRenderAll();
+          syncShapeInStorage(activeObj);
+        }}
       />
 
       <section className='flex min-h-0 flex-1 flex-row'>
-        <LeftSidebar allShapes={Array.from(canvasObjects)} />
+        <LeftSidebar allShapes={Array.from(canvasObjects)} visible={showLeftSidebar} />
 
-        <div className='custom-scrollbar flex-1 overflow-hidden'>
+        <div className='custom-scrollbar touch-canvas flex-1 overflow-hidden'>
           <Live canvasRef={canvasRef} undo={undo} redo={redo} />
         </div>
 
@@ -531,8 +763,13 @@ const Home = ({ roomId, roomCode }: HomeProps) => {
           activeObjectRef={activeObjectRef}
           syncShapeInStorage={syncShapeInStorage}
           roomCode={roomCode}
+          visible={showRightSidebar}
         />
       </section>
+
+      {showShortcuts && (
+        <ShortcutsModal onClose={() => setShowShortcuts(false)} />
+      )}
     </main>
   );
 };

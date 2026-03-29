@@ -15,6 +15,7 @@ type Presence = {
   userName: string;
   userId: string;
   isTyping?: boolean;
+  activeTool?: string;
 };
 
 // Optionally, Storage represents the shared document that persists in the

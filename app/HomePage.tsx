@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { generateRoomCode } from "@/lib/room-utils";
 import { Button } from "@/components/ui/button";
 import JoinRoomModal from "@/components/JoinRoomModal";
@@ -26,14 +27,7 @@ export default function HomePage() {
       const data = await response.json();
 
       if (!response.ok) {
-        // Handle Arcjet protection errors gracefully
-        if (response.status === 429) {
-          alert(`Rate limit exceeded: ${data.message}`);
-        } else if (response.status === 403) {
-          alert(`Access denied: ${data.message}`);
-        } else {
-          alert(data.message || "Failed to create room. Please try again.");
-        }
+        toast.error(data.message || "Failed to create room. Please try again.");
         setLoading(false);
         return;
       }
@@ -44,7 +38,7 @@ export default function HomePage() {
       router.push(`/room/${data.roomCode}`);
     } catch (error) {
       console.error("Failed to create room:", error);
-      alert(
+      toast.error(
         "Failed to create room. Please check your connection and try again."
       );
       setLoading(false);
@@ -56,11 +50,11 @@ export default function HomePage() {
   };
 
   return (
-    <div className='flex h-screen items-center justify-center bg-primary-grey-200'>
+    <div className='flex h-screen items-center justify-center bg-gray-100 dark:bg-primary-grey-200'>
       <div className='space-y-8 p-8 text-center'>
         <div className='space-y-4'>
-          <h1 className='text-4xl font-bold text-white'>Welcome to NeoLive</h1>
-          <p className='text-lg text-primary-grey-300'>
+          <h1 className='text-4xl font-bold text-gray-900 dark:text-white'>Welcome to NeoLive</h1>
+          <p className='text-lg text-gray-500 dark:text-primary-grey-300'>
             Real-time collaborative design made simple. Create or join a room to
             get started.
           </p>
@@ -78,13 +72,13 @@ export default function HomePage() {
           <Button
             onClick={handleJoinRoom}
             variant='outline'
-            className='w-full max-w-sm rounded-lg border-2 border-primary-grey-300 px-8 py-4 text-lg text-primary-grey-300 transition-colors hover:bg-primary-grey-300 hover:text-primary-grey-200'
+            className='w-full max-w-sm rounded-lg border-2 border-gray-300 px-8 py-4 text-lg text-gray-500 transition-colors hover:bg-gray-200 hover:text-gray-700 dark:border-primary-grey-300 dark:text-primary-grey-300 dark:hover:bg-primary-grey-300 dark:hover:text-primary-grey-200'
           >
             Join Existing Room
           </Button>
         </div>
 
-        <div className='space-y-1 text-sm text-primary-grey-300'>
+        <div className='space-y-1 text-sm text-gray-500 dark:text-primary-grey-300'>
           <p>• No account required</p>
           <p>• Rooms auto-delete after 10 minutes when empty</p>
           <p>• Sustain rooms for 24 hours to preserve content</p>

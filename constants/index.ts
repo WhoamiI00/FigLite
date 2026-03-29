@@ -91,6 +91,11 @@ export const shapeElements = [
     value: "bubble",
   },
   {
+    icon: "/assets/sticky-note.svg",
+    name: "Sticky Note",
+    value: "sticky-note",
+  },
+  {
     icon: "/assets/image.svg",
     name: "Image",
     value: "image",
@@ -362,5 +367,20 @@ export const shortcuts = [
     key: "8",
     name: "Duplicate",
     shortcut: "⌘ + D",
+  },
+  {
+    key: "9",
+    name: "Delete",
+    shortcut: "Backspace / Delete",
+  },
+  {
+    key: "10",
+    name: "Fit to Screen",
+    shortcut: "⌘ + 0",
+  },
+  {
+    key: "11",
+    name: "Pan",
+    shortcut: "Hold Space",
   },
 ];

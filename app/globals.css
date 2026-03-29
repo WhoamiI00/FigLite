@@ -4,8 +4,32 @@
 
 @import "@liveblocks/react-comments/styles.css";
 
+:root {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f3f4f6;
+  --bg-sidebar: #ffffff;
+  --text-primary: #1f2937;
+  --text-secondary: #6b7280;
+  --border-color: #e5e7eb;
+}
+
+.dark {
+  --bg-primary: #14181f;
+  --bg-secondary: #202731;
+  --bg-sidebar: #14181f;
+  --text-primary: #c4d3ed;
+  --text-secondary: #9ca3af;
+  --border-color: #2b303b;
+}
+
 * {
   font-family: "Work Sans", sans-serif;
+}
+
+.touch-canvas {
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
 }
 
 /* Font family utilities */

@@ -1,5 +1,7 @@
 import "./globals.css";
+import { Toaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 export const metadata = {
   title: "NeoLive - Real-time Collaborative Design",
@@ -27,7 +29,7 @@ const GOOGLE_FONTS_URL =
   "&display=swap";
 
 const RootLayout = ({ children }: { children: React.ReactNode }) => (
-  <html lang='en'>
+  <html lang='en' suppressHydrationWarning>
     <head>
       <link rel='preconnect' href='https://fonts.googleapis.com' />
       <link
@@ -37,8 +39,11 @@ const RootLayout = ({ children }: { children: React.ReactNode }) => (
       />
       <link href={GOOGLE_FONTS_URL} rel='stylesheet' />
     </head>
-    <body className='bg-primary-grey-200'>
-      <TooltipProvider>{children}</TooltipProvider>
+    <body className='bg-gray-100 dark:bg-primary-grey-200'>
+      <ThemeProvider>
+        <Toaster theme='dark' position='bottom-right' richColors />
+        <TooltipProvider>{children}</TooltipProvider>
+      </ThemeProvider>
     </body>
   </html>
 );

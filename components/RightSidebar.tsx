@@ -12,6 +12,10 @@ import Chat from "./Chat";
 import { Button } from "./ui/button";
 import Image from "next/image";
 
+interface ExtendedRightSidebarProps extends RightSidebarProps {
+  visible?: boolean;
+}
+
 const RightSidebar = ({
   elementAttributes,
   setElementAttributes,
@@ -20,7 +24,8 @@ const RightSidebar = ({
   isEditingRef,
   syncShapeInStorage,
   roomCode,
-}: RightSidebarProps) => {
+  visible,
+}: ExtendedRightSidebarProps) => {
   const colorInputRef = useRef(null);
   const strokeInputRef = useRef(null);
   const [activeTab, setActiveTab] = useState<"design" | "chat">("design");
@@ -42,16 +47,16 @@ const RightSidebar = ({
   // memoize the content of the right sidebar to avoid re-rendering on every mouse actions
   const memoizedContent = useMemo(
     () => (
-      <section className='sticky right-0 flex h-full min-w-[227px] select-none flex-col border-t border-primary-grey-200 bg-primary-black text-primary-grey-300 max-sm:hidden'>
+      <section className={`sticky right-0 flex h-full min-w-[227px] select-none flex-col border-t border-gray-200 bg-white text-gray-600 dark:border-primary-grey-200 dark:bg-primary-black dark:text-primary-grey-300 ${visible ? 'block' : 'hidden md:flex'}`}>
         {/* Tab Navigation */}
-        <div className='flex-shrink-0 border-b border-primary-grey-200'>
+        <div className='flex-shrink-0 border-b border-gray-200 dark:border-primary-grey-200'>
           <div className='flex'>
             <Button
               onClick={() => setActiveTab("design")}
               className={`flex-1 rounded-none px-4 py-3 text-xs font-medium transition-colors ${
                 activeTab === "design"
                   ? "border-b-2 border-primary-green bg-primary-green text-primary-black"
-                  : "bg-transparent text-primary-grey-300 hover:bg-primary-grey-200 hover:text-white"
+                  : "bg-transparent text-gray-500 hover:bg-gray-100 hover:text-gray-800 dark:text-primary-grey-300 dark:hover:bg-primary-grey-200 dark:hover:text-white"
               }`}
             >
               <Image
@@ -68,7 +73,7 @@ const RightSidebar = ({
               className={`flex-1 rounded-none px-4 py-3 text-xs font-medium transition-colors ${
                 activeTab === "chat"
                   ? "border-b-2 border-primary-green bg-primary-green text-primary-black"
-                  : "bg-transparent text-primary-grey-300 hover:bg-primary-grey-200 hover:text-white"
+                  : "bg-transparent text-gray-500 hover:bg-gray-100 hover:text-gray-800 dark:text-primary-grey-300 dark:hover:bg-primary-grey-200 dark:hover:text-white"
               }`}
             >
               <Image
@@ -135,8 +140,8 @@ const RightSidebar = ({
         )}
       </section>
     ),
-    [elementAttributes, roomCode, activeTab]
-  ); // only re-render when elementAttributes, roomCode, or activeTab changes
+    [elementAttributes, roomCode, activeTab, visible]
+  ); // only re-render when elementAttributes, roomCode, activeTab, or visible changes
 
   return memoizedContent;
 };

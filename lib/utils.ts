@@ -90,6 +90,12 @@ export const getShapeInfo = (shapeType: string) => {
         name: "Free Drawing",
       };
 
+    case "sticky-note":
+      return {
+        icon: "/assets/sticky-note.svg",
+        name: "Sticky Note",
+      };
+
     default:
       return {
         icon: "/assets/rectangle.svg",

@@ -16,6 +16,7 @@ const LiveCursors = ({ others }: LiveCursorProps) => {
         x={presence.cursor.x}
         y={presence.cursor.y}
         message={presence.message}
+        activeTool={presence.activeTool}
       />
     );
   });
